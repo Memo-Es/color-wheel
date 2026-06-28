@@ -464,8 +464,8 @@
           <div class="gradient-bar" id="gradientBar"></div>
         </div>
         <p class="footer-note">
-          Drag handles on the wheel to explore harmonies. Click any swatch to copy.<br>
-          Ideated by <a href="https://memoesparza.com">Memo Es</a> · Built with Claude Code.
+          Drag handles on the wheel to explore harmonies. Click any swatch to copy, or a name to rename.<br>
+          Color names via <a href="https://api.color.pizza" target="_blank" rel="noopener">color.pizza</a> · Ideated by <a href="https://memoesparza.com">Memo Es</a> · Built with Claude Code.
         </p>
       </div>
     </div>
@@ -606,9 +606,31 @@
   // Default swatch names derived from hue — overridable by the user (brand roles).
   const HUE_NAMES = [[0,'Red'],[15,'Scarlet'],[30,'Orange'],[45,'Amber'],[60,'Yellow'],[75,'Lime'],[95,'Green'],[140,'Emerald'],[165,'Teal'],[185,'Cyan'],[200,'Sky'],[220,'Blue'],[245,'Indigo'],[265,'Violet'],[285,'Purple'],[310,'Magenta'],[330,'Pink'],[348,'Rose'],[360,'Red']];
   function hueName(h){ h=mod360(h); let best='Color'; for(const [deg,n] of HUE_NAMES){ if(h>=deg) best=n; else break; } return best; }
-  function colorName(i, rgb){
-    if(state.names[i]) return state.names[i];
+
+  // Real color names are fetched from the open-source color-name-list
+  // (api.color.pizza, CORS-enabled, bulk). The hue bucket above is the instant
+  // offline fallback shown until a fetched name arrives. Results cache by hex.
+  const nameCache = {};
+  function defaultName(rgb){
+    const hex = rgbToHex(...rgb).toLowerCase();
+    if(nameCache[hex]) return nameCache[hex];
     const [h]=rgbToHsv(...rgb); return hueName(h);
+  }
+  function colorName(i, rgb){ return state.names[i] || defaultName(rgb); }
+
+  let nameTimer=null;
+  function scheduleNameFetch(){ clearTimeout(nameTimer); nameTimer=setTimeout(fetchNames, 450); }
+  async function fetchNames(){
+    const need = [...new Set(schemeColors().map(c=>c.hex.toLowerCase()))].filter(h=>!nameCache[h]);
+    if(!need.length) return;
+    try{
+      const q = need.map(h=>h.replace('#','')).join(',');
+      const res = await fetch('https://api.color.pizza/v1/?list=bestOf&noduplicates=true&values='+q);
+      if(!res.ok) throw new Error('http '+res.status);
+      const data = await res.json();
+      (data.colors||[]).forEach(c=>{ if(c.requestedHex) nameCache[c.requestedHex.toLowerCase()]=c.name; });
+      render();
+    }catch(e){ /* offline / blocked → silently keep hue-bucket fallback */ }
   }
   // Soft = pale tint, Vivid = saturated punch — derivatives of a main hue.
   function softVivid(rgb){
@@ -752,7 +774,7 @@
       nameEl.textContent=colorName(i,c.rgb);
       nameEl.title='Click to rename';
       nameEl.onclick=e=>e.stopPropagation();
-      nameEl.onblur=()=>{ const v=nameEl.textContent.trim(); if(v && v!==hueName(rgbToHsv(...c.rgb)[0])) state.names[i]=v; else delete state.names[i]; };
+      nameEl.onblur=()=>{ const v=nameEl.textContent.trim(); if(v && v!==defaultName(c.rgb)) state.names[i]=v; else delete state.names[i]; };
       nameEl.onkeydown=e=>{ if(e.key==='Enter'){ e.preventDefault(); nameEl.blur(); } };
       info.appendChild(hexEl); info.appendChild(nameEl);
       row.appendChild(info);
@@ -777,6 +799,7 @@
 
     renderExtra();
     renderScaleBar();
+    scheduleNameFetch();
   }
 
   function gradientCss(){

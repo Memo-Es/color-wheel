@@ -11,7 +11,9 @@ wheel to explore harmonies, generate scales, and export your palette.
 - Harmony schemes: Analogous, Complementary, Split & Double Split
   Complementary, Triadic, Rectangle, Tetradic, Square, **Pentadic**
   (5 evenly-spaced mains — ideal for brand systems)
-- **Editable color names** per swatch (smart hue-based defaults, click to rename)
+- **Real color names** fetched from the open-source [color-name-list](https://api.color.pizza)
+  (api.color.pizza) — curated, unique per palette; falls back to an offline
+  hue-based name if the network is unavailable. Every name is editable (click to rename)
 - **Soft / Vivid variants** auto-derived per color (pale tint + saturated punch)
 - **Brand-board export** — a named mosaic board in a brand-sheet layout,
   downloadable as PNG or SVG
