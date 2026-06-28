@@ -24,6 +24,11 @@ wheel to explore harmonies, generate scales, and export your palette.
   (uicolors-style: input color anchored at its closest shade, saturation
   curve toward the tints/shades) — with a visual preview and full
   `theme.extend.colors` config export. No API key, no network
+- **Per-color detail view** (click a swatch's ⤢ button): a large 50–950 ramp
+  with a **selectable anchor stop** (click any stop to place the source color
+  there and rebuild the ramp), a **WCAG contrast matrix** (per-shade text
+  legibility + a full background×text grid with AA/AA-Large markers), and a
+  **color-info** panel (HEX/RGB/HSL/HSV/OKLCH, relative luminance, on-white/black)
 - Optional **5th color on Tetradic** for 5-stop gradient palettes — drops a
   draggable handle into the largest hue gap (smoothest sweep), with a live
   gradient preview you can copy as a CSS `linear-gradient`

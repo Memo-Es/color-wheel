@@ -399,6 +399,85 @@
     opacity: 0; transition: opacity 200ms ease, transform 200ms ease; pointer-events: none;
   }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(-4px); }
+
+  /* ── Per-color detail view ─────────────────────────────────── */
+  .detail-btn {
+    position: absolute; top: 10px; right: 12px;
+    width: 28px; height: 28px; border-radius: 7px;
+    background: rgba(255,255,255,0.14); border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; transition: opacity 140ms ease, background 140ms ease;
+  }
+  .palette-row:hover .detail-btn { opacity: 0.9; }
+  .detail-btn:hover { background: rgba(255,255,255,0.28); opacity: 1; }
+  .detail-btn svg { width: 15px; height: 15px; }
+
+  .detail-modal {
+    width: 100%; max-width: 860px; max-height: 90vh;
+    background: #111; border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 14px; box-shadow: 0 40px 90px rgba(0,0,0,0.65);
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+  .detail-head {
+    display: flex; align-items: center; gap: 16px;
+    padding: 18px 22px; border-bottom: 1px solid var(--panel-border); position: relative;
+  }
+  .detail-title-wrap { display: flex; align-items: center; gap: 10px; min-width: 0; }
+  .detail-dot { width: 20px; height: 20px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.25); flex-shrink: 0; }
+  .detail-title { font-size: 19px; font-weight: 600; margin: 0; white-space: nowrap; }
+  .detail-hex { font-family: ui-monospace, monospace; font-size: 12px; color: var(--text-dim); }
+  .detail-tabs { display: flex; gap: 2px; margin-left: auto; }
+  .detail-tab {
+    padding: 8px 14px; background: transparent; border: 1px solid transparent;
+    color: var(--text-dim); font-size: 13px; cursor: pointer; border-radius: 8px;
+  }
+  .detail-tab:hover { color: var(--text); }
+  .detail-tab.active { color: var(--text); border-color: var(--accent); background: rgba(255,255,255,0.06); }
+  .detail-head .modal-close { position: static; }
+  .detail-body { padding: 22px; overflow: auto; }
+
+  .d-ramp { display: flex; gap: 4px; }
+  .d-stop {
+    flex: 1; min-width: 0; height: 130px; border: none; cursor: pointer;
+    border-radius: 8px; padding: 10px 8px; position: relative;
+    display: flex; flex-direction: column; justify-content: flex-end; gap: 2px;
+    transition: transform 120ms ease;
+  }
+  .d-stop:hover { transform: translateY(-3px); }
+  .d-stop.anchor { outline: 2px solid #fff; outline-offset: 2px; }
+  .d-anchor-dot { position: absolute; top: 8px; left: 50%; transform: translateX(-50%); width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+  .d-stop-n { font-size: 12px; font-weight: 700; }
+  .d-stop-h { font-family: ui-monospace, monospace; font-size: 9px; opacity: 0.75; }
+  .d-stop-h:hover { text-decoration: underline; }
+  .d-note { font-size: 12px; color: var(--text-dim); line-height: 1.5; margin: 16px 0 0; }
+  .d-note strong { color: var(--text); }
+
+  .d-sub { font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-dimmer); margin-bottom: 10px; display: flex; align-items: center; gap: 12px; }
+  .d-csum { display: grid; grid-template-columns: repeat(auto-fit, minmax(118px,1fr)); gap: 6px; }
+  .d-csum-row { display: flex; align-items: center; gap: 8px; padding: 9px 11px; border-radius: 7px; font-size: 12px; }
+  .d-csum-row > span:first-child { font-weight: 700; }
+  .d-csum-r { margin-left: auto; font-family: ui-monospace, monospace; font-size: 11px; }
+  .d-csum-r em { font-style: normal; opacity: 0.7; }
+  .d-tag { font-size: 9px; font-weight: 700; padding: 2px 5px; border-radius: 4px; background: rgba(0,0,0,0.18); }
+  .d-legend { font-size: 10px; font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--text-dim); display: inline-flex; align-items: center; gap: 6px; }
+  .d-legend i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; margin-left: 8px; }
+  .d-legend i.pass { background: #2ecc71; } .d-legend i.passlg { background: rgba(46,204,113,0.4); }
+
+  .d-mx { display: grid; gap: 2px; }
+  .d-mx-cell {
+    display: flex; align-items: center; justify-content: center;
+    font-family: ui-monospace, monospace; font-size: 9.5px; aspect-ratio: 1; border-radius: 3px;
+  }
+  .d-mx-h { background: transparent; color: var(--text-dim); font-weight: 600; font-size: 9px; }
+  .d-mx-corner { font-size: 8px; color: var(--text-dimmer); }
+  .d-mx-cell.pass { box-shadow: inset 0 0 0 1.5px #2ecc71; }
+  .d-mx-cell.passlg { box-shadow: inset 0 0 0 1px rgba(46,204,113,0.4); }
+
+  .d-info { display: flex; flex-direction: column; gap: 1px; background: var(--panel-border); border-radius: 8px; overflow: hidden; }
+  .d-info-row { display: flex; justify-content: space-between; gap: 16px; padding: 12px 14px; background: var(--panel); }
+  .d-info-k { font-size: 12px; color: var(--text-dim); }
+  .d-info-v { font-family: ui-monospace, monospace; font-size: 12px; color: var(--text); cursor: copy; }
+  .d-info-v:hover { text-decoration: underline; }
 </style>
 </head>
 <body>
@@ -535,6 +614,22 @@
     </div>
   </div>
 
+  <!-- Per-color detail view -->
+  <div class="modal-scrim hidden" id="detailScrim">
+    <div class="detail-modal">
+      <div class="detail-head">
+        <div class="detail-title-wrap">
+          <span class="detail-dot" id="detailDot"></span>
+          <h3 class="detail-title" id="detailName">Color</h3>
+          <span class="detail-hex" id="detailHex"></span>
+        </div>
+        <div class="detail-tabs" id="detailTabs"></div>
+        <button class="modal-close" id="detailClose">&times;</button>
+      </div>
+      <div class="detail-body" id="detailBody"></div>
+    </div>
+  </div>
+
   <div class="toast" id="toast">Copied</div>
 
 <script>
@@ -626,7 +721,7 @@
   const SCHEME_ORDER = ['Analogous','Complementary','Double Split Complementary','Rectangle','Split Complementary','Tetradic','Triadic','Square','Pentadic'];
 
   // ─── State ───────────────────────────────────────────────────
-  const state = { h: 72, s: 0.88, v: 0.97, scheme: 'Pentadic', format: 'hex', scale: 'Tailwind', extra: null, variants: false, names: {} };
+  const state = { h: 72, s: 0.88, v: 0.97, scheme: 'Pentadic', format: 'hex', scale: 'Tailwind', extra: null, variants: false, names: {}, anchors: {}, detailIndex: null, detailTab: 'Scale' };
 
   // Default swatch names derived from hue — overridable by the user (brand roles).
   const HUE_NAMES = [[0,'Red'],[15,'Scarlet'],[30,'Orange'],[45,'Amber'],[60,'Yellow'],[75,'Lime'],[95,'Green'],[140,'Emerald'],[165,'Teal'],[185,'Cyan'],[200,'Sky'],[220,'Blue'],[245,'Indigo'],[265,'Violet'],[285,'Purple'],[310,'Magenta'],[330,'Pink'],[348,'Rose'],[360,'Red']];
@@ -726,10 +821,11 @@
   // the anchor) while still reproducing the exact picked color at its stop.
   const TW_STOPS = [50,100,200,300,400,500,600,700,800,900,950];
   const TW_L = [97.5, 94, 86, 77, 66, 55, 46, 38, 30, 23, 13];
-  function tailwindScale(rgb){
+  function tailwindScale(rgb, forcedAi){
     const [h,s,l] = rgbToHsl(...rgb); const L=l*100;
-    let ai=0, bd=1e9;
-    TW_L.forEach((tl,i)=>{ const d=Math.abs(tl-L); if(d<bd){bd=d;ai=i;} });
+    let ai;
+    if(forcedAi!=null){ ai=forcedAi; }
+    else { ai=0; let bd=1e9; TW_L.forEach((tl,i)=>{ const d=Math.abs(tl-L); if(d<bd){bd=d;ai=i;} }); }
     const Lmax=TW_L[0], Lmin=TW_L[TW_L.length-1];
     return TW_L.map((tl,i)=>{
       if(i===ai) return rgb.slice(); // exact picked color at its stop
@@ -742,6 +838,20 @@
       return hslToRgb(h, clamp(sat,0,1), clamp(LL,0,100)/100);
     });
   }
+  // Per-color anchor stop overrides (index 0–10). Unset → auto (closest to 500).
+  function scaleOf(i, rgb){ return tailwindScale(rgb, (state.anchors && state.anchors[i]!=null) ? state.anchors[i] : null); }
+  function anchorIndexOf(i, rgb){
+    if(state.anchors && state.anchors[i]!=null) return state.anchors[i];
+    const L=rgbToHsl(...rgb)[2]*100; let ai=0,bd=1e9;
+    TW_L.forEach((tl,k)=>{ const d=Math.abs(tl-L); if(d<bd){bd=d;ai=k;} });
+    return ai;
+  }
+
+  // ─── WCAG contrast ───────────────────────────────────────────
+  function relLum(rgb){ const [r,g,b]=rgb.map(c=>{c/=255;return c<=0.03928?c/12.92:Math.pow((c+0.055)/1.055,2.4);}); return 0.2126*r+0.7152*g+0.0722*b; }
+  function contrast(a,b){ const l1=relLum(a),l2=relLum(b); const hi=Math.max(l1,l2),lo=Math.min(l1,l2); return (hi+0.05)/(lo+0.05); }
+  function wcagTag(r){ return r>=7?'AAA':r>=4.5?'AA':r>=3?'AA Lg':'—'; }
+
   const SCALE_TYPES = ['Tailwind','Shades','Tints','Tones','Analogous','Complementary','Split Complementary','Triadic','Tetradic','Square'];
 
   // ─── DOM refs ────────────────────────────────────────────────
@@ -843,6 +953,14 @@
         });
         row.appendChild(wrap);
       }
+
+      const det=document.createElement('button');
+      det.className='detail-btn'; det.title='Scale, contrast & info';
+      det.style.color=ink;
+      det.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/></svg>';
+      det.onclick=e=>{ e.stopPropagation(); openDetail(i); };
+      row.appendChild(det);
+
       palette.appendChild(row);
     });
 
@@ -1058,7 +1176,7 @@
       // Full 50–950 scale per named color (uicolors-style), ready for theme.extend.colors.
       let out=['colors: {'];
       cols.forEach((c,i)=>{
-        const scale=tailwindScale(c.rgb);
+        const scale=scaleOf(i, c.rgb);
         out.push(`  '${keys[i]}': {`);
         TW_STOPS.forEach((stop,si)=>{ out.push(`    '${stop}': '${rgbToHex(...scale[si]).toLowerCase()}',`); });
         out.push('  },');
@@ -1121,8 +1239,8 @@
 
   // Visual preview of every color's 50–950 scale (rows of clickable swatches).
   function buildScalesPreviewHtml(){
-    return namedColors().map(c=>{
-      const scale=tailwindScale(c.rgb);
+    return namedColors().map((c,i)=>{
+      const scale=scaleOf(i, c.rgb);
       const cells=TW_STOPS.map((stop,si)=>{
         const hex=rgbToHex(...scale[si]); const ink=textOn(scale[si]);
         return `<div class="tw-cell" style="background:${hex};color:${ink}" data-hex="${hex.toLowerCase()}" title="${hex.toLowerCase()} — click to copy"><span class="tw-stop">${stop}</span><span class="tw-hex">${hex.replace('#','').toLowerCase()}</span></div>`;
@@ -1179,6 +1297,93 @@
     img.src=url;
   };
 
+  // ─── Per-color detail view ───────────────────────────────────
+  const detailScrim=$('detailScrim');
+  const DETAIL_TABS=['Scale','Contrast','Info'];
+  function detailColor(){ const c=schemeColors()[state.detailIndex]; return c; }
+  function openDetail(i){ state.detailIndex=i; state.detailTab='Scale'; renderDetail(); detailScrim.classList.remove('hidden'); }
+  function closeDetail(){ detailScrim.classList.add('hidden'); state.detailIndex=null; }
+
+  function renderDetail(){
+    const i=state.detailIndex; if(i==null) return;
+    const c=schemeColors()[i]; if(!c) return closeDetail();
+    const name=colorName(i,c.rgb);
+    $('detailName').textContent=name;
+    $('detailHex').textContent=c.hex.toLowerCase();
+    $('detailDot').style.background=c.hex;
+    const tabs=$('detailTabs'); tabs.innerHTML='';
+    DETAIL_TABS.forEach(t=>{ const b=document.createElement('button'); b.className='detail-tab'+(t===state.detailTab?' active':''); b.textContent=t; b.onclick=()=>{ state.detailTab=t; renderDetail(); }; tabs.appendChild(b); });
+    const body=$('detailBody');
+    if(state.detailTab==='Scale') body.innerHTML=detailScaleHtml(i,c);
+    else if(state.detailTab==='Contrast') body.innerHTML=detailContrastHtml(i,c);
+    else body.innerHTML=detailInfoHtml(c);
+  }
+
+  function detailScaleHtml(i,c){
+    const scale=scaleOf(i,c.rgb), ai=anchorIndexOf(i,c.rgb);
+    const cells=TW_STOPS.map((stop,si)=>{
+      const hex=rgbToHex(...scale[si]); const ink=textOn(scale[si]);
+      return `<button class="d-stop${si===ai?' anchor':''}" data-stop="${si}" data-hex="${hex.toLowerCase()}" style="background:${hex};color:${ink}" title="Click to set ${stop} as the source stop">`+
+        `${si===ai?'<span class="d-anchor-dot"></span>':''}<span class="d-stop-n">${stop}</span><span class="d-stop-h">${hex.replace('#','').toLowerCase()}</span></button>`;
+    }).join('');
+    return `<div class="d-ramp">${cells}</div>
+      <p class="d-note">The picked color sits at <strong>${TW_STOPS[ai]}</strong>. Click any stop to move it there and rebuild the ramp around it. Click the hex to copy.</p>`;
+  }
+
+  function detailContrastHtml(i,c){
+    const scale=scaleOf(i,c.rgb).map(s=>s);
+    const white=[255,255,255], black=[10,10,10];
+    // summary: best text + ratios vs white/black
+    let summary='<div class="d-sub">Text legibility per shade</div><div class="d-csum">';
+    scale.forEach((rgb,si)=>{
+      const cw=contrast(rgb,white), cb=contrast(rgb,black);
+      const best=cw>=cb?{r:cw,ink:'#fff',lbl:'white'}:{r:cb,ink:'#0a0a0a',lbl:'black'};
+      summary+=`<div class="d-csum-row" style="background:${rgbToHex(...rgb)};color:${best.ink}"><span>${TW_STOPS[si]}</span><span class="d-csum-r">${best.r.toFixed(2)} <em>${best.lbl}</em></span><span class="d-tag d-${wcagTag(best.r).replace(/\s/g,'')}">${wcagTag(best.r)}</span></div>`;
+    });
+    summary+='</div>';
+    // matrix: bg = row, text = col
+    let head='<div class="d-mx-cell d-mx-corner">bg \\ text</div>'+TW_STOPS.map(s=>`<div class="d-mx-cell d-mx-h">${s}</div>`).join('');
+    let rows='';
+    scale.forEach((bg,r)=>{
+      rows+=`<div class="d-mx-cell d-mx-h">${TW_STOPS[r]}</div>`;
+      scale.forEach((fg,cI)=>{
+        const ratio=contrast(bg,fg); const pass=ratio>=4.5, passLg=ratio>=3;
+        rows+=`<div class="d-mx-cell${pass?' pass':passLg?' passlg':''}" style="background:${rgbToHex(...bg)};color:${rgbToHex(...fg)}" title="${TW_STOPS[r]} on ${TW_STOPS[cI]}: ${ratio.toFixed(2)}:1 (${wcagTag(ratio)})">${ratio.toFixed(1)}</div>`;
+      });
+    });
+    const matrix=`<div class="d-sub" style="margin-top:18px">Contrast matrix — every shade as background × text. <span class="d-legend"><i class="pass"></i>AA <i class="passlg"></i>AA Large</span></div>`+
+      `<div class="d-mx" style="grid-template-columns:repeat(${TW_STOPS.length+1}, 1fr)">${head}${rows}</div>`;
+    return summary+matrix;
+  }
+
+  function detailInfoHtml(c){
+    const [r,g,b]=c.rgb;
+    const [h,s,l]=rgbToHsl(r,g,b), [,sv,vv]=rgbToHsv(r,g,b), [L,C,oh]=rgbToOklch(r,g,b);
+    const lum=relLum(c.rgb);
+    const rows=[
+      ['HEX', c.hex.toLowerCase()],
+      ['RGB', `${r}, ${g}, ${b}`],
+      ['HSL', `${Math.round(h)}°, ${Math.round(s*100)}%, ${Math.round(l*100)}%`],
+      ['HSV', `${Math.round(h)}°, ${Math.round(sv*100)}%, ${Math.round(vv*100)}%`],
+      ['OKLCH', `${L.toFixed(3)} ${C.toFixed(3)} ${Math.round(oh)}`],
+      ['Rel. luminance', lum.toFixed(4)],
+      ['On white', contrast(c.rgb,[255,255,255]).toFixed(2)+':1 ('+wcagTag(contrast(c.rgb,[255,255,255]))+')'],
+      ['On black', contrast(c.rgb,[10,10,10]).toFixed(2)+':1 ('+wcagTag(contrast(c.rgb,[10,10,10]))+')'],
+    ];
+    return '<div class="d-info">'+rows.map(([k,v])=>`<div class="d-info-row"><span class="d-info-k">${k}</span><span class="d-info-v" data-copy="${v}">${v}</span></div>`).join('')+'</div>';
+  }
+
+  $('detailBody').addEventListener('click', e=>{
+    const stop=e.target.closest('.d-stop');
+    if(stop){
+      if(e.target.classList.contains('d-stop-h')){ copy('#'+e.target.textContent); return; }
+      state.anchors[state.detailIndex]=+stop.dataset.stop; renderDetail(); render(); return;
+    }
+    const v=e.target.closest('.d-info-v'); if(v){ copy(v.dataset.copy); }
+  });
+  $('detailClose').onclick=closeDetail;
+  detailScrim.onclick=e=>{ if(e.target===detailScrim) closeDetail(); };
+
   // ─── Global dismiss + keyboard ───────────────────────────────
   document.addEventListener('click', e=>{
     if(!e.target.closest('#schemeMenu')&&!e.target.closest('#schemeSelect')) schemeMenu.classList.add('hidden');
@@ -1186,8 +1391,8 @@
     if(!e.target.closest('#pickerPop')&&!e.target.closest('#openPicker')) pickerPop.classList.add('hidden');
   });
   document.addEventListener('keydown', e=>{
-    if(e.key==='Escape'){ schemeMenu.classList.add('hidden'); scalePop.classList.add('hidden'); pickerPop.classList.add('hidden'); scrim.classList.add('hidden'); }
-    if(e.key.toLowerCase()==='r' && !/input|select|textarea/i.test(document.activeElement.tagName)) $('randomBtn').click();
+    if(e.key==='Escape'){ schemeMenu.classList.add('hidden'); scalePop.classList.add('hidden'); pickerPop.classList.add('hidden'); scrim.classList.add('hidden'); closeDetail(); }
+    if(e.key.toLowerCase()==='r' && !/input|select|textarea/i.test(document.activeElement.tagName) && detailScrim.classList.contains('hidden') && scrim.classList.contains('hidden')) $('randomBtn').click();
   });
   window.addEventListener('resize', render);
 
