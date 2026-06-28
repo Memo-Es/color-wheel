@@ -9,7 +9,12 @@ wheel to explore harmonies, generate scales, and export your palette.
 
 - Interactive HSV color wheel with draggable harmony handles
 - Harmony schemes: Analogous, Complementary, Split & Double Split
-  Complementary, Triadic, Rectangle, Tetradic, Square
+  Complementary, Triadic, Rectangle, Tetradic, Square, **Pentadic**
+  (5 evenly-spaced mains — ideal for brand systems)
+- **Editable color names** per swatch (smart hue-based defaults, click to rename)
+- **Soft / Vivid variants** auto-derived per color (pale tint + saturated punch)
+- **Brand-board export** — a named mosaic board in a brand-sheet layout,
+  downloadable as PNG or SVG
 - Optional **5th color on Tetradic** for 5-stop gradient palettes — drops a
   draggable handle into the largest hue gap (smoothest sweep), with a live
   gradient preview you can copy as a CSS `linear-gradient`
@@ -17,7 +22,8 @@ wheel to explore harmonies, generate scales, and export your palette.
 - Scale generator: Tailwind steps, Shades, Tints, Tones, and harmony scales
 - Color picker popover (saturation/value square + hue slider) and eyedropper
 - Random palette, click-to-copy swatches
-- Export to CSS, SCSS, JSON, Tailwind config, SVG, or a hex array
+- Export to CSS, SCSS, JSON, Tailwind config, SVG, hex array, or brand board
+  (names and variants are carried into every code export)
 - No dependencies, no build step — pure HTML/CSS/JS
 
 ## Usage

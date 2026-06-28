@@ -32,6 +32,7 @@
   }
 
   button { font-family: inherit; }
+  .hidden { display: none !important; }
   ::selection { background: rgba(250,248,245,0.18); }
 
   /* ── Top bar ───────────────────────────────────────────────── */
@@ -223,18 +224,34 @@
 
   .palette { border-radius: 14px; overflow: hidden; border: 1px solid var(--panel-border); }
   .palette-row {
-    display: flex; align-items: center; justify-content: center;
-    min-height: 96px; cursor: pointer; position: relative;
+    display: flex; align-items: stretch; justify-content: space-between;
+    min-height: 92px; position: relative;
+  }
+  .swatch-info {
+    display: flex; flex-direction: column; justify-content: flex-end;
+    gap: 2px; padding: 14px 16px; flex: 1; min-width: 0;
+  }
+  .swatch-hex {
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-    font-size: 19px; font-weight: 600; letter-spacing: 0.06em;
-    transition: flex 200ms ease;
+    font-size: 12px; font-weight: 500; opacity: 0.7; cursor: copy;
+    width: fit-content;
   }
-  .palette-row .copy-hint {
-    position: absolute; right: 14px; opacity: 0;
-    font-size: 11px; font-family: "Inter", sans-serif; font-weight: 500;
-    letter-spacing: 0.02em; transition: opacity 140ms ease;
+  .swatch-hex:hover { opacity: 1; text-decoration: underline; }
+  .swatch-name {
+    font-family: "Inter", sans-serif; font-size: 20px; font-weight: 600;
+    letter-spacing: -0.01em; outline: none; cursor: text;
+    border-radius: 4px; padding: 0 2px; margin: 0 -2px; width: fit-content;
+    min-width: 20px;
   }
-  .palette-row:hover .copy-hint { opacity: 0.75; }
+  .swatch-name:focus { box-shadow: 0 0 0 2px rgba(0,0,0,0.18); background: rgba(255,255,255,0.12); }
+  .variant-wrap { display: flex; flex-shrink: 0; }
+  .variant-chip {
+    width: 76px; display: flex; flex-direction: column; justify-content: flex-end;
+    gap: 2px; padding: 10px 12px; cursor: copy;
+  }
+  .variant-chip .vh { font-family: ui-monospace, monospace; font-size: 9.5px; opacity: 0.7; }
+  .variant-chip .vl { font-family: "Inter", sans-serif; font-size: 11px; font-weight: 600; }
+  @media (max-width: 880px) { .variant-chip { width: 64px; } }
 
   .footer-note {
     margin-top: 22px; font-size: 11px; color: var(--text-dimmer); line-height: 1.6;
@@ -342,7 +359,13 @@
     font-size: 12.5px; color: #d8d4cf; white-space: pre; overflow: auto;
     line-height: 1.6; max-height: 320px;
   }
-  .copy-row { display: flex; gap: 10px; margin-top: 16px; }
+  .board-preview {
+    background: #060606; border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px; padding: 12px; max-height: 340px; overflow: auto;
+  }
+  .board-preview svg { width: 100%; height: auto; display: block; border-radius: 6px; }
+  .board-preview.hidden, .code-block.hidden, #downloadPng.hidden { display: none; }
+  .copy-row { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
   .secondary-btn {
     background: transparent; border: 1px solid rgba(255,255,255,0.14);
     color: var(--text); padding: 10px 18px; border-radius: 9px;
@@ -429,6 +452,7 @@
           <div class="scheme-menu hidden" id="schemeMenu"></div>
         </div>
         <div class="palette" id="palette"></div>
+        <button class="extra-btn" id="variantBtn"></button>
         <button class="extra-btn hidden" id="extraBtn"></button>
         <div class="gradient-block hidden" id="gradientBlock">
           <div class="gradient-head">
@@ -476,9 +500,11 @@
         <h3 class="modal-title" id="exportTitle">CSS Variables</h3>
         <p class="modal-sub" id="exportSub">Drop these custom properties into your stylesheet.</p>
         <pre class="code-block" id="exportCode"></pre>
+        <div class="board-preview hidden" id="boardPreview"></div>
         <div class="copy-row">
           <button class="secondary-btn" id="copyExport">Copy</button>
           <button class="secondary-btn" id="downloadExport">Download</button>
+          <button class="secondary-btn hidden" id="downloadPng">Download PNG</button>
         </div>
       </div>
     </div>
@@ -570,11 +596,25 @@
     'Rectangle': [0, 60, 180, 240],
     'Tetradic': [0, 90, 180, 270],
     'Square': [0, 90, 180, 270],
+    'Pentadic': [0, 72, 144, 216, 288],
   };
-  const SCHEME_ORDER = ['Analogous','Complementary','Double Split Complementary','Rectangle','Split Complementary','Tetradic','Triadic','Square'];
+  const SCHEME_ORDER = ['Analogous','Complementary','Double Split Complementary','Rectangle','Split Complementary','Tetradic','Triadic','Square','Pentadic'];
 
   // ─── State ───────────────────────────────────────────────────
-  const state = { h: 72, s: 0.88, v: 0.97, scheme: 'Tetradic', format: 'hex', scale: 'Tailwind', extra: null };
+  const state = { h: 72, s: 0.88, v: 0.97, scheme: 'Pentadic', format: 'hex', scale: 'Tailwind', extra: null, variants: false, names: {} };
+
+  // Default swatch names derived from hue — overridable by the user (brand roles).
+  const HUE_NAMES = [[0,'Red'],[15,'Scarlet'],[30,'Orange'],[45,'Amber'],[60,'Yellow'],[75,'Lime'],[95,'Green'],[140,'Emerald'],[165,'Teal'],[185,'Cyan'],[200,'Sky'],[220,'Blue'],[245,'Indigo'],[265,'Violet'],[285,'Purple'],[310,'Magenta'],[330,'Pink'],[348,'Rose'],[360,'Red']];
+  function hueName(h){ h=mod360(h); let best='Color'; for(const [deg,n] of HUE_NAMES){ if(h>=deg) best=n; else break; } return best; }
+  function colorName(i, rgb){
+    if(state.names[i]) return state.names[i];
+    const [h]=rgbToHsv(...rgb); return hueName(h);
+  }
+  // Soft = pale tint, Vivid = saturated punch — derivatives of a main hue.
+  function softVivid(rgb){
+    const [h]=rgbToHsv(...rgb);
+    return { soft: hsvToRgb(h, 0.16, 1.0), vivid: hsvToRgb(h, 0.92, 0.94) };
+  }
 
   // The 5th-color option is only offered on Tetradic (see color-theory note in README).
   const EXTRA_SCHEME = 'Tetradic';
@@ -692,15 +732,48 @@
 
     // palette
     palette.innerHTML='';
-    schemeColors().forEach(c=>{
+    schemeColors().forEach((c,i)=>{
       const row=document.createElement('div');
       row.className='palette-row';
       row.style.background=c.hex;
-      row.style.color=textOn(c.rgb);
-      row.innerHTML = c.hex.replace('#','') + `<span class="copy-hint">Click to copy</span>`;
-      row.onclick=()=>copy(c.hex);
+      const ink=textOn(c.rgb);
+      row.style.color=ink;
+
+      const info=document.createElement('div');
+      info.className='swatch-info';
+      const hexEl=document.createElement('span');
+      hexEl.className='swatch-hex';
+      hexEl.textContent=c.hex.toLowerCase();
+      hexEl.title='Click to copy';
+      hexEl.onclick=e=>{ e.stopPropagation(); copy(c.hex); };
+      const nameEl=document.createElement('span');
+      nameEl.className='swatch-name';
+      nameEl.contentEditable='true'; nameEl.spellcheck=false;
+      nameEl.textContent=colorName(i,c.rgb);
+      nameEl.title='Click to rename';
+      nameEl.onclick=e=>e.stopPropagation();
+      nameEl.onblur=()=>{ const v=nameEl.textContent.trim(); if(v && v!==hueName(rgbToHsv(...c.rgb)[0])) state.names[i]=v; else delete state.names[i]; };
+      nameEl.onkeydown=e=>{ if(e.key==='Enter'){ e.preventDefault(); nameEl.blur(); } };
+      info.appendChild(hexEl); info.appendChild(nameEl);
+      row.appendChild(info);
+
+      if(state.variants){
+        const sv=softVivid(c.rgb);
+        const wrap=document.createElement('div'); wrap.className='variant-wrap';
+        [['Soft',sv.soft],['Vivid',sv.vivid]].forEach(([lbl,vrgb])=>{
+          const v=document.createElement('div'); v.className='variant-chip';
+          v.style.background=rgbToHex(...vrgb); v.style.color=textOn(vrgb);
+          v.innerHTML=`<span class="vh">${rgbToHex(...vrgb).toLowerCase()}</span><span class="vl">${lbl}</span>`;
+          v.title='Click to copy'; v.onclick=e=>{ e.stopPropagation(); copy(rgbToHex(...vrgb)); };
+          wrap.appendChild(v);
+        });
+        row.appendChild(wrap);
+      }
       palette.appendChild(row);
     });
+
+    $('variantBtn').textContent = state.variants ? '− Hide Soft + Vivid variants' : '+ Show Soft + Vivid variants';
+    $('variantBtn').classList.toggle('on', state.variants);
 
     renderExtra();
     renderScaleBar();
@@ -715,10 +788,11 @@
   }
   function renderExtra(){
     const btn=$('extraBtn'), block=$('gradientBlock');
-    if(state.scheme!==EXTRA_SCHEME){ btn.classList.add('hidden'); block.classList.add('hidden'); return; }
-    btn.classList.remove('hidden'); block.classList.remove('hidden');
+    // 5th-color toggle is Tetradic-only; gradient preview shows for every scheme.
+    btn.classList.toggle('hidden', state.scheme!==EXTRA_SCHEME);
     if(extraEnabled()){ btn.textContent='− Remove 5th color'; btn.classList.add('on'); }
     else { btn.textContent='+ Add 5th color'; btn.classList.remove('on'); }
+    block.classList.remove('hidden');
     $('gradientBar').style.background = gradientCss();
   }
 
@@ -787,6 +861,7 @@
     render();
   };
   $('copyGradient').onclick=()=>copy('background: '+gradientCss()+';');
+  $('variantBtn').onclick=()=>{ state.variants=!state.variants; render(); };
 
   // ─── Scheme menu ─────────────────────────────────────────────
   const schemeMenu=$('schemeMenu');
@@ -870,30 +945,100 @@
 
   // ─── Export modal ────────────────────────────────────────────
   const scrim=$('modalScrim');
-  const EXPORT_TABS=['CSS','SCSS','JSON','Tailwind','SVG','Array'];
+  const EXPORT_TABS=['Board','CSS','SCSS','JSON','Tailwind','SVG','Array'];
   const EXPORT_META={
+    Board:['Brand Board','A named palette board — download as PNG or SVG.'],
     CSS:['CSS Variables','Drop these custom properties into your stylesheet.'],
     SCSS:['SCSS Variables','Sass variables for your palette.'],
-    JSON:['JSON','Structured palette data.'],
+    JSON:['JSON','Structured palette data with names and variants.'],
     Tailwind:['Tailwind Config','Paste into tailwind.config.js theme.extend.colors.'],
     SVG:['SVG Swatches','A ready-to-use SVG of the palette.'],
     Array:['Hex Array','A plain JavaScript array of hex strings.'],
   };
-  let activeTab='CSS';
+  let activeTab='Board';
+  const slug=s=>s.toLowerCase().trim().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'color';
+  function namedColors(){
+    return schemeColors().map((c,i)=>({ ...c, name: colorName(i,c.rgb), slug: slug(colorName(i,c.rgb)), sv: softVivid(c.rgb) }));
+  }
   function exportContent(tab){
-    const cols=schemeColors();
-    const names=cols.map((c,i)=>'color-'+(i+1));
-    if(tab==='CSS') return ':root {\n'+cols.map((c,i)=>`  --${names[i]}: ${c.hex.toLowerCase()};`).join('\n')+'\n}';
-    if(tab==='SCSS') return cols.map((c,i)=>`$${names[i]}: ${c.hex.toLowerCase()};`).join('\n');
-    if(tab==='JSON') return JSON.stringify({scheme:state.scheme, colors:cols.map(c=>c.hex.toLowerCase())}, null, 2);
-    if(tab==='Tailwind') return 'colors: {\n'+cols.map((c,i)=>`  '${names[i]}': '${c.hex.toLowerCase()}',`).join('\n')+'\n}';
-    if(tab==='Array') return '['+cols.map(c=>`"${c.hex.toLowerCase()}"`).join(', ')+']';
-    if(tab==='SVG'){
-      const w=100; return `<svg xmlns="http://www.w3.org/2000/svg" width="${w*cols.length}" height="120" viewBox="0 0 ${w*cols.length} 120">\n`+
-        cols.map((c,i)=>`  <rect x="${i*w}" y="0" width="${w}" height="120" fill="${c.hex.toLowerCase()}"/>`).join('\n')+'\n</svg>';
+    const cols=namedColors();
+    const uniq=(()=>{ const seen={}; return s=>{ seen[s]=(seen[s]||0)+1; return seen[s]>1? s+'-'+seen[s]:s; }; })();
+    const keys=cols.map(c=>uniq(c.slug));
+    const line=(k,hex)=>[k,hex.toLowerCase()];
+    if(tab==='CSS'){
+      let out=[]; cols.forEach((c,i)=>{ out.push(`  --${keys[i]}: ${c.hex.toLowerCase()};`); if(state.variants){ out.push(`  --${keys[i]}-soft: ${rgbToHex(...c.sv.soft).toLowerCase()};`); out.push(`  --${keys[i]}-vivid: ${rgbToHex(...c.sv.vivid).toLowerCase()};`);} });
+      return ':root {\n'+out.join('\n')+'\n}';
     }
+    if(tab==='SCSS'){
+      let out=[]; cols.forEach((c,i)=>{ out.push(`$${keys[i]}: ${c.hex.toLowerCase()};`); if(state.variants){ out.push(`$${keys[i]}-soft: ${rgbToHex(...c.sv.soft).toLowerCase()};`); out.push(`$${keys[i]}-vivid: ${rgbToHex(...c.sv.vivid).toLowerCase()};`);} });
+      return out.join('\n');
+    }
+    if(tab==='JSON'){
+      return JSON.stringify({ scheme:state.scheme, colors: cols.map((c,i)=>({
+        name:c.name, key:keys[i], hex:c.hex.toLowerCase(),
+        ...(state.variants?{soft:rgbToHex(...c.sv.soft).toLowerCase(), vivid:rgbToHex(...c.sv.vivid).toLowerCase()}:{})
+      }))}, null, 2);
+    }
+    if(tab==='Tailwind'){
+      let out=[]; cols.forEach((c,i)=>{
+        if(state.variants) out.push(`  '${keys[i]}': { DEFAULT: '${c.hex.toLowerCase()}', soft: '${rgbToHex(...c.sv.soft).toLowerCase()}', vivid: '${rgbToHex(...c.sv.vivid).toLowerCase()}' },`);
+        else out.push(`  '${keys[i]}': '${c.hex.toLowerCase()}',`);
+      });
+      return 'colors: {\n'+out.join('\n')+'\n}';
+    }
+    if(tab==='Array'){
+      const all=[]; cols.forEach(c=>{ all.push(c.hex.toLowerCase()); if(state.variants){ all.push(rgbToHex(...c.sv.soft).toLowerCase()); all.push(rgbToHex(...c.sv.vivid).toLowerCase()); } });
+      return '['+all.map(h=>`"${h}"`).join(', ')+']';
+    }
+    if(tab==='SVG'){
+      const w=120; return `<svg xmlns="http://www.w3.org/2000/svg" width="${w*cols.length}" height="140" viewBox="0 0 ${w*cols.length} 140">\n`+
+        cols.map((c,i)=>`  <rect x="${i*w}" y="0" width="${w}" height="140" fill="${c.hex.toLowerCase()}"/>`).join('\n')+'\n</svg>';
+    }
+    if(tab==='Board') return buildBoardSvg();
     return '';
   }
+
+  // ─── Brand board (mosaic) ────────────────────────────────────
+  function buildBoardSvg(){
+    const cols=namedColors();
+    const PAD=0, gap=8;
+    const cellW=240, cellH=200, anchorW=220;
+    const rows=cols.length;
+    const colW = state.variants ? 150 : 0;
+    const boardH = Math.max(cellH*Math.ceil(rows/2), 600);
+    // Left anchors: Carbon (dark) + White
+    const darkest=hsvToRgb(state.h, Math.min(state.s,0.55), 0.12);
+    const carbon=rgbToHex(...darkest);
+    let x0=0;
+    const W = anchorW*2 + cellW + colW + gap*3;
+    const H = boardH;
+    let svg=`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" font-family="Inter, system-ui, sans-serif">`;
+    svg+=`<rect width="${W}" height="${H}" fill="#0a0a0a"/>`;
+    function tile(x,y,w,h,hex,name,sub,small){
+      const ink=textOn(hexToRgb(hex)); const fs=small?14:20; const hs=small?10:12;
+      return `<g><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="6" fill="${hex}"/>`+
+        `<text x="${x+16}" y="${y+h-34}" fill="${ink}" font-size="${hs}" opacity="0.7" font-family="ui-monospace, monospace">${hex.toUpperCase()}</text>`+
+        `<text x="${x+16}" y="${y+h-14}" fill="${ink}" font-size="${fs}" font-weight="600">${name}</text></g>`;
+    }
+    // anchors column
+    svg+=tile(0,0,anchorW,H,carbon,'Carbon','#020D23',false);
+    svg+=tile(anchorW+gap,0,anchorW,H,'#FFFFFF','White','#FFFFFF',false);
+    // main colors stacked
+    const mx=anchorW*2+gap*2;
+    const mh=(H-(rows-1)*gap)/rows;
+    cols.forEach((c,i)=>{ svg+=tile(mx, i*(mh+gap), cellW, mh, c.hex.toUpperCase(), c.name, '', false); });
+    // soft/vivid column
+    if(state.variants){
+      const vx=mx+cellW+gap; const vh=(H-(rows*2-1)*gap)/(rows*2); let yy=0;
+      cols.forEach(c=>{
+        svg+=tile(vx, yy, colW, vh, rgbToHex(...c.sv.soft).toUpperCase(), c.name+' Soft','',true); yy+=vh+gap;
+        svg+=tile(vx, yy, colW, vh, rgbToHex(...c.sv.vivid).toUpperCase(), c.name+' Vivid','',true); yy+=vh+gap;
+      });
+    }
+    svg+='</svg>';
+    return svg;
+  }
+
   function renderExport(){
     const tabs=$('modalTabs'); tabs.innerHTML='';
     EXPORT_TABS.forEach(t=>{
@@ -905,7 +1050,12 @@
     });
     $('exportTitle').textContent=EXPORT_META[activeTab][0];
     $('exportSub').textContent=EXPORT_META[activeTab][1];
-    $('exportCode').textContent=exportContent(activeTab);
+    const isBoard=activeTab==='Board';
+    $('exportCode').classList.toggle('hidden', isBoard);
+    $('boardPreview').classList.toggle('hidden', !isBoard);
+    $('downloadPng').classList.toggle('hidden', !isBoard);
+    if(isBoard){ $('boardPreview').innerHTML=buildBoardSvg(); }
+    else { $('exportCode').textContent=exportContent(activeTab); }
   }
   function openExport(){ renderExport(); scrim.classList.remove('hidden'); }
   $('exportBtn').onclick=openExport;
@@ -914,9 +1064,24 @@
   scrim.onclick=e=>{ if(e.target===scrim) scrim.classList.add('hidden'); };
   $('copyExport').onclick=()=>copy(exportContent(activeTab));
   $('downloadExport').onclick=()=>{
-    const ext={CSS:'css',SCSS:'scss',JSON:'json',Tailwind:'js',SVG:'svg',Array:'js'}[activeTab];
+    const ext={Board:'svg',CSS:'css',SCSS:'scss',JSON:'json',Tailwind:'js',SVG:'svg',Array:'js'}[activeTab];
     const blob=new Blob([exportContent(activeTab)],{type:'text/plain'});
-    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='palette.'+ext; a.click(); URL.revokeObjectURL(a.href);
+    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=(activeTab==='Board'?'brand-board':'palette')+'.'+ext; a.click(); URL.revokeObjectURL(a.href);
+  };
+  $('downloadPng').onclick=()=>{
+    const svg=buildBoardSvg();
+    const img=new Image();
+    const blob=new Blob([svg],{type:'image/svg+xml'});
+    const url=URL.createObjectURL(blob);
+    img.onload=()=>{
+      const scale=2; const cv=document.createElement('canvas');
+      cv.width=img.width*scale; cv.height=img.height*scale;
+      const ctx=cv.getContext('2d'); ctx.scale(scale,scale); ctx.drawImage(img,0,0);
+      URL.revokeObjectURL(url);
+      cv.toBlob(b=>{ const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download='brand-board.png'; a.click(); URL.revokeObjectURL(a.href); });
+    };
+    img.onerror=()=>{ URL.revokeObjectURL(url); showToast('PNG export failed'); };
+    img.src=url;
   };
 
   // ─── Global dismiss + keyboard ───────────────────────────────
