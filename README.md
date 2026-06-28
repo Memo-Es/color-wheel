@@ -14,7 +14,9 @@ wheel to explore harmonies, generate scales, and export your palette.
 - **Real color names** fetched from the open-source [color-name-list](https://api.color.pizza)
   (api.color.pizza), using the **ntc / Name That Color** list — the same clean,
   conventional names uicolors.app shows; unique per palette, falls back to an
-  offline hue-based name if the network is unavailable. Every name is editable (click to rename)
+  offline hue-based name if the network is unavailable. Every name is editable (click to rename).
+  Names are anchored to each color's **500** shade, so the name stays stable no
+  matter which tint/shade you pick (surfaced with an in-app note and per-name tooltip)
 - **Soft / Vivid variants** auto-derived per color (pale tint + saturated punch)
 - **Brand-board export** — a named mosaic board in a brand-sheet layout,
   downloadable as PNG or SVG

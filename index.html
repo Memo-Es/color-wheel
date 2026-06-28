@@ -257,6 +257,14 @@
     margin-top: 22px; font-size: 11px; color: var(--text-dimmer); line-height: 1.6;
   }
   .footer-note a { color: var(--text-dim); }
+  .name-note {
+    display: flex; align-items: flex-start; gap: 7px;
+    margin-top: 10px; padding: 9px 11px;
+    background: rgba(255,255,255,0.03); border: 1px solid var(--panel-border);
+    border-radius: 8px; font-size: 11px; color: var(--text-dim); line-height: 1.45;
+  }
+  .name-note svg { width: 13px; height: 13px; flex-shrink: 0; margin-top: 1px; opacity: 0.7; }
+  .name-note strong { color: var(--text); font-weight: 600; }
 
   /* 5th-color toggle + gradient preview */
   .extra-btn {
@@ -464,6 +472,10 @@
           <div class="scheme-menu hidden" id="schemeMenu"></div>
         </div>
         <div class="palette" id="palette"></div>
+        <div class="name-note">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+          <span>Names come from each color's <strong>500</strong> shade, so they stay stable across tints &amp; shades. Click a name to override.</span>
+        </div>
         <button class="extra-btn" id="variantBtn"></button>
         <button class="extra-btn hidden" id="extraBtn"></button>
         <div class="gradient-block hidden" id="gradientBlock">
@@ -625,17 +637,21 @@
   // list — the same clean, conventional names uicolors.app shows. The hue
   // bucket above is the instant offline fallback. Results cache by hex.
   const nameCache = {};
+  // A family is always named from its 500 shade (its true hue), so the name is
+  // stable no matter which tint/shade you picked — the way uicolors anchors it.
+  function anchor500(rgb){ return tailwindScale(rgb)[5]; } // index 5 = stop 500
+  function anchorHex(rgb){ return rgbToHex(...anchor500(rgb)).toLowerCase(); }
   function defaultName(rgb){
-    const hex = rgbToHex(...rgb).toLowerCase();
+    const hex = anchorHex(rgb);
     if(nameCache[hex]) return nameCache[hex];
-    const [h]=rgbToHsv(...rgb); return hueName(h);
+    const [h]=rgbToHsv(...anchor500(rgb)); return hueName(h);
   }
   function colorName(i, rgb){ return state.names[i] || defaultName(rgb); }
 
   let nameTimer=null;
   function scheduleNameFetch(){ clearTimeout(nameTimer); nameTimer=setTimeout(fetchNames, 450); }
   async function fetchNames(){
-    const need = [...new Set(schemeColors().map(c=>c.hex.toLowerCase()))].filter(h=>!nameCache[h]);
+    const need = [...new Set(schemeColors().map(c=>anchorHex(c.rgb)))].filter(h=>!nameCache[h]);
     if(!need.length) return;
     try{
       const q = need.map(h=>h.replace('#','')).join(',');
@@ -802,7 +818,8 @@
       nameEl.className='swatch-name';
       nameEl.contentEditable='true'; nameEl.spellcheck=false;
       nameEl.textContent=colorName(i,c.rgb);
-      nameEl.title='Click to rename';
+      nameEl.title = state.names[i] ? 'Custom name — click to rename'
+        : 'Named from 500 shade '+anchorHex(c.rgb)+' — click to rename';
       nameEl.onclick=e=>e.stopPropagation();
       nameEl.onblur=()=>{ const v=nameEl.textContent.trim(); if(v && v!==defaultName(c.rgb)) state.names[i]=v; else delete state.names[i]; };
       nameEl.onkeydown=e=>{ if(e.key==='Enter'){ e.preventDefault(); nameEl.blur(); } };
