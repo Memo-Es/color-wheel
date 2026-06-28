@@ -720,21 +720,26 @@
   }
 
   // ─── Tailwind 50–950 scale (uicolors-style) ──────────────────
-  // Target lightness per stop, then anchor the input at its closest stop so
-  // the chosen color actually appears in its scale; saturation eases toward
-  // the tints and lifts toward the shades to avoid washed-out / muddy ends.
+  // Canonical per-stop lightness curve. The input is anchored at its closest
+  // stop, then the curve is *rescaled* on each side so it passes through the
+  // input's real lightness at the anchor — keeping even spacing (no kink at
+  // the anchor) while still reproducing the exact picked color at its stop.
   const TW_STOPS = [50,100,200,300,400,500,600,700,800,900,950];
-  const TW_L = [97.5, 94, 86, 77, 66, 55, 47, 39, 32, 26, 16];
+  const TW_L = [97.5, 94, 86, 77, 66, 55, 46, 38, 30, 23, 13];
   function tailwindScale(rgb){
     const [h,s,l] = rgbToHsl(...rgb); const L=l*100;
     let ai=0, bd=1e9;
     TW_L.forEach((tl,i)=>{ const d=Math.abs(tl-L); if(d<bd){bd=d;ai=i;} });
+    const Lmax=TW_L[0], Lmin=TW_L[TW_L.length-1];
     return TW_L.map((tl,i)=>{
-      if(i===ai) return rgb.slice();
+      if(i===ai) return rgb.slice(); // exact picked color at its stop
+      let LL;
+      if(i<ai){ const t=(Lmax-tl)/(Lmax-TW_L[ai]); LL=Lmax+(L-Lmax)*t; }      // 50 → anchor
+      else    { const t=(TW_L[ai]-tl)/(TW_L[ai]-Lmin); LL=L+(Lmin-L)*t; }     // anchor → 950
       let sat;
       if(i<ai) sat = s*(0.82+0.18*(i/Math.max(ai,1)));            // lighter → slightly softer
       else     sat = s*(1+0.18*((i-ai)/Math.max(TW_L.length-1-ai,1))); // darker → slightly richer
-      return hslToRgb(h, clamp(sat,0,1), tl/100);
+      return hslToRgb(h, clamp(sat,0,1), clamp(LL,0,100)/100);
     });
   }
   const SCALE_TYPES = ['Tailwind','Shades','Tints','Tones','Analogous','Complementary','Split Complementary','Triadic','Tetradic','Square'];
