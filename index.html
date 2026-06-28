@@ -621,8 +621,9 @@
   function hueName(h){ h=mod360(h); let best='Color'; for(const [deg,n] of HUE_NAMES){ if(h>=deg) best=n; else break; } return best; }
 
   // Real color names are fetched from the open-source color-name-list
-  // (api.color.pizza, CORS-enabled, bulk). The hue bucket above is the instant
-  // offline fallback shown until a fetched name arrives. Results cache by hex.
+  // (api.color.pizza, CORS-enabled, bulk) using the "ntc" (Name That Color)
+  // list — the same clean, conventional names uicolors.app shows. The hue
+  // bucket above is the instant offline fallback. Results cache by hex.
   const nameCache = {};
   function defaultName(rgb){
     const hex = rgbToHex(...rgb).toLowerCase();
@@ -638,7 +639,7 @@
     if(!need.length) return;
     try{
       const q = need.map(h=>h.replace('#','')).join(',');
-      const res = await fetch('https://api.color.pizza/v1/?list=bestOf&noduplicates=true&values='+q);
+      const res = await fetch('https://api.color.pizza/v1/?list=ntc&noduplicates=true&values='+q);
       if(!res.ok) throw new Error('http '+res.status);
       const data = await res.json();
       (data.colors||[]).forEach(c=>{ if(c.requestedHex) nameCache[c.requestedHex.toLowerCase()]=c.name; });
