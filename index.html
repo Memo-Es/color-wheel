@@ -241,6 +241,24 @@
   }
   .footer-note a { color: var(--text-dim); }
 
+  /* 5th-color toggle + gradient preview */
+  .extra-btn {
+    width: 100%; margin-top: 12px;
+    background: transparent; color: var(--text-dim);
+    border: 1px dashed rgba(255,255,255,0.22);
+    padding: 12px; border-radius: 10px; font-size: 13px; font-weight: 500;
+    cursor: pointer; transition: all 140ms ease;
+  }
+  .extra-btn:hover { color: var(--text); border-color: rgba(255,255,255,0.4); background: rgba(255,255,255,0.04); }
+  .extra-btn.on { border-style: solid; color: var(--text); }
+
+  .gradient-block { margin-top: 16px; }
+  .gradient-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .gradient-label { font-size: 10px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-dimmer); }
+  .gradient-bar { height: 46px; border-radius: 10px; border: 1px solid var(--panel-border); }
+
+  .handle.extra { border-style: dashed; border-color: #fff; }
+
   /* ── Color picker popover ──────────────────────────────────── */
   .picker-pop {
     position: fixed; z-index: 50;
@@ -411,6 +429,16 @@
           <div class="scheme-menu hidden" id="schemeMenu"></div>
         </div>
         <div class="palette" id="palette"></div>
+        <button class="extra-btn hidden" id="extraBtn"></button>
+        <div class="gradient-block hidden" id="gradientBlock">
+          <div class="gradient-head">
+            <span class="gradient-label">Gradient preview</span>
+            <button class="mini-icon" id="copyGradient" title="Copy CSS gradient">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            </button>
+          </div>
+          <div class="gradient-bar" id="gradientBar"></div>
+        </div>
         <p class="footer-note">
           Drag handles on the wheel to explore harmonies. Click any swatch to copy.<br>
           Ideated by <a href="https://memoesparza.com">Memo Es</a> · Built with Claude Code.
@@ -546,13 +574,33 @@
   const SCHEME_ORDER = ['Analogous','Complementary','Double Split Complementary','Rectangle','Split Complementary','Tetradic','Triadic','Square'];
 
   // ─── State ───────────────────────────────────────────────────
-  const state = { h: 72, s: 0.88, v: 0.97, scheme: 'Tetradic', format: 'hex', scale: 'Tailwind' };
+  const state = { h: 72, s: 0.88, v: 0.97, scheme: 'Tetradic', format: 'hex', scale: 'Tailwind', extra: null };
+
+  // The 5th-color option is only offered on Tetradic (see color-theory note in README).
+  const EXTRA_SCHEME = 'Tetradic';
+  function extraEnabled(){ return state.scheme===EXTRA_SCHEME && state.extra!==null; }
+  // Default the 5th color into the largest hue gap → smoothest 5-stop gradient.
+  function gapMidpoint(){
+    const offs = SCHEMES[state.scheme].slice().sort((a,b)=>a-b);
+    let best=0, bestGap=-1;
+    for(let i=0;i<offs.length;i++){
+      const a=offs[i], b=(i+1<offs.length)?offs[i+1]:offs[0]+360;
+      if(b-a>bestGap){ bestGap=b-a; best=mod360((a+b)/2); }
+    }
+    return best;
+  }
+  function currentOffsets(){
+    const offs = SCHEMES[state.scheme].slice();
+    if(extraEnabled()) offs.push(state.extra);
+    return offs;
+  }
 
   function baseRgb(){ return hsvToRgb(state.h, state.s, state.v); }
   function schemeColors(){
-    return SCHEMES[state.scheme].map(off => {
+    const offs = currentOffsets();
+    return offs.map((off,i) => {
       const rgb = hsvToRgb(state.h+off, state.s, state.v);
-      return { off, rgb, hex: rgbToHex(...rgb) };
+      return { off, rgb, hex: rgbToHex(...rgb), isExtra: extraEnabled() && i===offs.length-1 };
     });
   }
 
@@ -631,12 +679,12 @@
       const rad = state.s*inner;
       const x = R + rad*Math.sin(ang), y = R - rad*Math.cos(ang);
       const el = document.createElement('div');
-      el.className = 'handle'+(i===0?' primary':'');
+      el.className = 'handle'+(i===0?' primary':'')+(c.isExtra?' extra':'');
       el.style.left=x+'px'; el.style.top=y+'px';
       el.style.background=c.hex;
       el.dataset.idx=i;
       stage.appendChild(el);
-      attachHandleDrag(el, i);
+      attachHandleDrag(el, i, c.isExtra);
     });
 
     // scheme label
@@ -654,7 +702,24 @@
       palette.appendChild(row);
     });
 
+    renderExtra();
     renderScaleBar();
+  }
+
+  function gradientCss(){
+    // Order stops by hue around the wheel for the smoothest sweep.
+    const cols = schemeColors()
+      .map(c=>({ hex:c.hex, h: mod360(state.h+c.off) }))
+      .sort((a,b)=>a.h-b.h);
+    return `linear-gradient(90deg, ${cols.map(c=>c.hex.toLowerCase()).join(', ')})`;
+  }
+  function renderExtra(){
+    const btn=$('extraBtn'), block=$('gradientBlock');
+    if(state.scheme!==EXTRA_SCHEME){ btn.classList.add('hidden'); block.classList.add('hidden'); return; }
+    btn.classList.remove('hidden'); block.classList.remove('hidden');
+    if(extraEnabled()){ btn.textContent='− Remove 5th color'; btn.classList.add('on'); }
+    else { btn.textContent='+ Add 5th color'; btn.classList.remove('on'); }
+    $('gradientBar').style.background = gradientCss();
   }
 
   function renderScaleBar(){
@@ -676,12 +741,18 @@
     const rad=clamp(Math.hypot(dx,dy)/inner,0,1);
     return { hue: mod360(ang), sat: rad };
   }
-  function attachHandleDrag(el, idx){
+  function attachHandleDrag(el, idx, isExtra){
     el.addEventListener('pointerdown', e=>{
       e.preventDefault(); e.stopPropagation();
       el.setPointerCapture(e.pointerId); el.classList.add('dragging');
-      const off = SCHEMES[state.scheme][idx];
-      const move = ev=>{ const p=pointFromEvent(ev); state.h=mod360(p.hue-off); state.s=p.sat; render(); };
+      const off = currentOffsets()[idx];
+      // The 5th handle moves only itself (its offset); others rotate the whole palette.
+      const move = ev=>{
+        const p=pointFromEvent(ev);
+        if(isExtra){ state.extra=mod360(p.hue-state.h); }
+        else { state.h=mod360(p.hue-off); }
+        state.s=p.sat; render();
+      };
       const up = ev=>{ el.classList.remove('dragging'); el.releasePointerCapture(e.pointerId); window.removeEventListener('pointermove',move); window.removeEventListener('pointerup',up); };
       window.addEventListener('pointermove',move); window.addEventListener('pointerup',up);
     });
@@ -709,6 +780,13 @@
     state.v=0.75+Math.random()*0.25;
     render();
   };
+
+  // ─── 5th color toggle + gradient copy ────────────────────────
+  $('extraBtn').onclick=()=>{
+    state.extra = extraEnabled() ? null : gapMidpoint();
+    render();
+  };
+  $('copyGradient').onclick=()=>copy('background: '+gradientCss()+';');
 
   // ─── Scheme menu ─────────────────────────────────────────────
   const schemeMenu=$('schemeMenu');

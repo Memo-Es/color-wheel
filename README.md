@@ -10,6 +10,9 @@ wheel to explore harmonies, generate scales, and export your palette.
 - Interactive HSV color wheel with draggable harmony handles
 - Harmony schemes: Analogous, Complementary, Split & Double Split
   Complementary, Triadic, Rectangle, Tetradic, Square
+- Optional **5th color on Tetradic** for 5-stop gradient palettes — drops a
+  draggable handle into the largest hue gap (smoothest sweep), with a live
+  gradient preview you can copy as a CSS `linear-gradient`
 - Live readouts in Hex, RGB, HSL, HSV, and OKLCH
 - Scale generator: Tailwind steps, Shades, Tints, Tones, and harmony scales
 - Color picker popover (saturation/value square + hue slider) and eyedropper
