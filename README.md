@@ -17,6 +17,10 @@ wheel to explore harmonies, generate scales, and export your palette.
 - **Soft / Vivid variants** auto-derived per color (pale tint + saturated punch)
 - **Brand-board export** — a named mosaic board in a brand-sheet layout,
   downloadable as PNG or SVG
+- **Tailwind 50–950 scales** generated locally for every named color
+  (uicolors-style: input color anchored at its closest shade, saturation
+  curve toward the tints/shades) — with a visual preview and full
+  `theme.extend.colors` config export. No API key, no network
 - Optional **5th color on Tetradic** for 5-stop gradient palettes — drops a
   draggable handle into the largest hue gap (smoothest sweep), with a live
   gradient preview you can copy as a CSS `linear-gradient`
