@@ -15,15 +15,15 @@ wheel to explore harmonies, generate scales, and export your palette.
   (api.color.pizza), using the **ntc / Name That Color** list — the same clean,
   conventional names uicolors.app shows; unique per palette, falls back to an
   offline hue-based name if the network is unavailable. Every name is editable (click to rename).
-  Names are anchored to each color's **500** shade, so the name stays stable no
-  matter which tint/shade you pick (surfaced with an in-app note and per-name tooltip)
+  Names come from the picked color (the swatch you see); editable per swatch
 - **Soft / Vivid variants** auto-derived per color (pale tint + saturated punch)
 - **Brand-board export** — a named mosaic board in a brand-sheet layout,
   downloadable as PNG or SVG
-- **Tailwind 50–950 scales** generated locally for every named color
-  (uicolors-style: input color anchored at its closest shade, saturation
-  curve toward the tints/shades) — with a visual preview and full
-  `theme.extend.colors` config export. No API key, no network
+- **Tailwind 50–950 scales** generated locally in **OKLCH**, with lightness
+  and chroma curves averaged from real Tailwind palettes — so a bright color
+  anchors at 400 (not 500) like uicolors, mids stay vivid, darks deepen, and
+  out-of-gamut chroma is mapped down rather than clipped. Visual preview +
+  full `theme.extend.colors` export. No API key, no network
 - **Per-color detail view** (click a swatch's ⤢ button): a large 50–950 ramp
   with a **selectable anchor stop** (click any stop to place the source color
   there and rebuild the ramp), a **WCAG contrast matrix** (per-shade text
